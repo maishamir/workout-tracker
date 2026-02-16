@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+// enums 
+
+enum MuscleGroup {
+    CHEST
+  BACK
+  SHOULDERS
+  BICEPS
+  TRICEPS
+  QUADS
+  HAMSTRINGS
+  GLUTES
+  CALVES
+  CORE
+  TRAPS
+  LATS
+  LOWER_BACK
+}
+
+enum Equipment {
+    DUMBBELL
+  BARBELL
+  MACHINE
+  CABLE
+  BODYWEIGHT
+  KETTLEBELL
+  RESISTANCE_BAND
+  TREADMILL
+  ELLIPTICAL
+  STAIRMASTER
+  ROWER
+}
+
+enum ExerciseType {
+    STRENGTH
+  CARDIO
+}
+
+// represents a movement (e.g. Barbell Squat)
+model Exercise {
+  id                 Int          @id @default(autoincrement())
+  name               String       @unique
+  primaryMuscleGroup MuscleGroup
+  equipment          Equipment
+  type               ExerciseType
+  isCustom           Boolean      @default(false)
+  isActive           Boolean      @default(true)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  routineExercises   RoutineExercise[]
+  sessionExercises   SessionExercise[]
+}
+
+
+
+// model for a structured workout plan
+model Routine {
+  id        Int       @id @default(autoincrement())
+  name      String
+  tags      String[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  routineExercises RoutineExercise[]
+  workoutSessions  WorkoutSession[]
+}
+
+// Represents an Exercise inside a specific Routine.
+model RoutineExercise {
+  id         Int      @id @default(autoincrement())
+  routineId  Int
+  exerciseId Int
+  sectionLabel String
+  orderIndex Int
+
+  routine  Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
+
+  routineSets RoutineSet[]
+
+  @@index([routineId])
+  @@index([exerciseId])
+}
+
+// Defines target rep prescription inside a Routine.
+model RoutineSet {
+  id                Int  @id @default(autoincrement())
+  routineExerciseId Int
+  orderIndex        Int
+  targetMinReps     Int?
+  targetMaxReps     Int?
+  targetExactReps   Int?
+
+  routineExercise RoutineExercise @relation(fields: [routineExerciseId], references: [id], onDelete: Cascade)
+
+  @@index([routineExerciseId])
+}
+
+// Represents one actual workout performed.
+model WorkoutSession {
+  id                  Int       @id @default(autoincrement())
+  routineId           Int
+  routineNameSnapshot String
+  date                DateTime
+  completed           Boolean   @default(false)
+
+  routine        Routine        @relation(fields: [routineId], references: [id], onDelete: Restrict)
+  sessionExercises SessionExercise[]
+
+  @@index([routineId])
+}
+
+// Represents a copied Exercise inside a WorkoutSession.
+model SessionExercise {
+  id                Int  @id @default(autoincrement())
+  workoutSessionId Int
+  exerciseId       Int
+  sectionLabel     String
+  orderIndex       Int
+
+  workoutSession WorkoutSession @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
+  exercise       Exercise       @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
+
+  sessionSets SessionSet[]
+
+  @@index([workoutSessionId])
+  @@index([exerciseId])
+}
+
+// Represents actual logged performance data.
+model SessionSet {
+  id               Int  @id @default(autoincrement())
+  sessionExerciseId Int
+  orderIndex       Int
+  targetMinReps    Int?
+  targetMaxReps    Int?
+  targetExactReps  Int?
+  actualReps       Int?
+  actualWeight     Float?
+
+  sessionExercise SessionExercise @relation(fields: [sessionExerciseId], references: [id], onDelete: Cascade)
+
+  @@index([sessionExerciseId])
+}
