@@ -61,6 +61,9 @@ router.get("/:id", async (req, res) => {
                     ],
                     include: {
                         exercise: true,
+                        routineSets: {
+                            orderBy: { orderIndex: "asc" }
+                        }
                     }
                 }
             }
@@ -174,6 +177,52 @@ router.post("/:id/exercises", async (req, res) => {
         }
 
         res.status(500).json({ error: "Failed to add exercise to routine" });
+    }
+})
+
+// TODO: SET THE NUMBER OF TARGET REPS PER SET
+router.post("/routine-exercises/:id/sets", async (req, res) => {
+    try {
+        const routineExerciseId = Number(req.params.id);
+
+        if (!Number.isInteger(routineExerciseId)) {
+            return res.status(400).json({ error: "Invalid routineExercise id" });
+        }
+
+        const {
+            orderIndex,
+            targetMinReps,
+            targetMaxReps,
+            targetExactReps,
+        } = req.body;
+
+        if (orderIndex === undefined) {
+            return res.status(400).json({
+                error: "orderIndex is required",
+            });
+        }
+
+        const set = await prisma.routineSet.create({
+            data: {
+                routineExerciseId,
+                orderIndex,
+                targetMinReps,
+                targetMaxReps,
+                targetExactReps,
+            },
+        });
+
+        res.status(201).json(set);
+    } catch (error) {
+        console.error(error);
+
+        if (error.code === "P2003") {
+            return res.status(400).json({
+                error: "Invalid routineExerciseId",
+            });
+        }
+
+        res.status(500).json({ error: "Failed to create routine set" });
     }
 })
 
