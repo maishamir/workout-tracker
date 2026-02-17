@@ -53,6 +53,17 @@ router.get("/:id", async (req, res) => {
 
         const routine = await prisma.routine.findUnique({
             where: { id },
+            include: {
+                routineExercises: {
+                    orderBy: [
+                        { sectionLabel: "asc" },
+                        { orderIndex: "asc" }
+                    ],
+                    include: {
+                        exercise: true,
+                    }
+                }
+            }
         });
 
         if (!routine) {
