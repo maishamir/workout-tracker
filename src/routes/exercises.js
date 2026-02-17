@@ -6,11 +6,21 @@ const router = express.Router();
 // route to get all exercises
 router.get("/", async (req, res) => {
     try {
-        const exercises = await prisma.exercise.findMany({
-            orderBy: { name: "asc" },
-        });
+        const { active } = req.query;
 
-        res.json(exercises);
+        const whereClause = {};
+
+        if (active !== undefined) {
+            if (active === "true") whereClause.isActive = true;
+            if (active === "false") whereClause.isActive = false;
+        }
+
+        const execises = await prisma.exercise.findMany({
+            where: whereClause,
+            orderBy: { name: "asc" },
+        })
+
+        res.json(execises)
     }
     catch (error) {
         console.error(error);
