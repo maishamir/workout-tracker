@@ -30,9 +30,41 @@ router.post("/", async (req, res) => {
 })
 
 // TODO: ROUTE TO GET ALL ROUTINES
+router.get("/", async (req, res) => {
+    try {
+        const routines = await prisma.routine.findMany({
+            orderBy: { createdAt: "desc" },
+        });
+        res.json(routines);
 
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Failed to fetch routines" })
+    }
+})
 
 // TODO: ROUTE TO GET SPECIFIC ROUTINE
+router.get("/:id", async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+        if (!Number.isInteger(id)) {
+            return res.status(400).json({ error: "Invalid routine id" });
+        }
+
+        const routine = await prisma.routine.findUnique({
+            where: { id },
+        });
+
+        if (!routine) {
+            return res.status(404).json({ error: "Routine not found" });
+        }
+        res.json(routine);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Failed to fetch routines" })
+    }
+})
 // TODO: ROUTE TO EDIT A ROUTINE
 // TODO: ROUTE TO DELETE A ROUTINE
 export default router;
