@@ -66,5 +66,38 @@ router.get("/:id", async (req, res) => {
     }
 })
 // TODO: ROUTE TO EDIT A ROUTINE
+router.patch("/:id", async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+
+        if (!Number.isInteger(id)) {
+            return res.status(400).json({ error: "Invalid routine id" });
+        }
+
+        const { name, tags } = req.body;
+
+        const updateData = {};
+
+        if (name !== undefined) updateData.name = name;
+        if (tags !== undefined) updateData.tags = tags;
+
+        const updatedRoutine = await prisma.routine.update({
+            where: { id },
+            data: updateData,
+        });
+
+        res.json(updatedRoutine);
+
+    } catch (error) {
+        console.error(error);
+
+        if (error.code === "P2025") {
+            return res.status(404).json({ error: "Routine not found" });
+        }
+
+        res.status(500).json({ error: "Failed to update routine" });
+    }
+});
+
 // TODO: ROUTE TO DELETE A ROUTINE
 export default router;
