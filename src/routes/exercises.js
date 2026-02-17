@@ -123,4 +123,35 @@ router.patch("/:id", async (req, res) => {
     }
 })
 
+// allow user to "delete" the exercise
+router.delete("/:id", async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+
+        if (!Number.isInteger(id)) {
+            return res.status(400).json({ error: "Invalid exercise id" });
+        }
+
+        const deletedExercise = await prisma.exercise.update({
+            where: { id },
+            data: { isActive: false },
+        })
+
+        res.json({
+            message: "Exercise deactivated successfully",
+            exercise: deletedExercise
+        })
+    }
+
+    catch (error) {
+        console.error(error);
+
+        if (error.code === "P2025") {
+            return res.status(404), json({ error: "Exercise not found" });
+        }
+
+        res.status(500).json({ error: "Failed to delete exercise" });
+    }
+})
+
 export default router;
