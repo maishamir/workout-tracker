@@ -125,4 +125,46 @@ router.delete("/:id", async (req, res) => {
     }
 });
 
+
+// TODO: ROUTE TO ADD EXERCISE TO ROUTINE
+router.post("/:id/exercises", async (req, res) => {
+    try {
+        const routineId = Number(req.params.id);
+
+        if (!Number.isInteger(routineId)) {
+            return res.status(400).json({ error: "Invalid routine id" });
+        }
+
+        const { exerciseId, sectionLabel, orderIndex } = req.body;
+
+        if (!exerciseId || sectionLabel === undefined || orderIndex === undefined) {
+            return res.status(400).json({
+                error: "exerciseId, sectionLabel, and orderIndex are required",
+            });
+        }
+
+        const routineExercise = await prisma.routineExercise.create({
+            data: {
+                routineId,
+                exerciseId,
+                sectionLabel,
+                orderIndex,
+            },
+        });
+
+        res.status(201).json(routineExercise);
+    } catch (error) {
+        console.error(error);
+
+        if (error.code === "P2003") {
+            return res.status(400).json({
+                error: "Invalid routineId or exerciseId",
+            });
+        }
+
+        res.status(500).json({ error: "Failed to add exercise to routine" });
+    }
+})
+
+
 export default router;
