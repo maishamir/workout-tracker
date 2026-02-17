@@ -73,12 +73,12 @@ router.get("/:id", async (req, res) => {
 router.patch("/sets/:id", async (req, res) => {
     try {
         const id = Number(req.params.id);
-        
+
         if (!Number.isInteger(id)) {
-            return res.status(400).json({error: "Invalid session set id"});
+            return res.status(400).json({ error: "Invalid session set id" });
         }
 
-        const {actualReps, actualWeight} = req.body;
+        const { actualReps, actualWeight } = req.body;
 
         const updateData = {};
 
@@ -86,7 +86,7 @@ router.patch("/sets/:id", async (req, res) => {
         if (actualWeight !== undefined) updateData.actualWeight = actualWeight;
 
         const updatedSet = await prisma.sessionSet.update({
-            where: {id},
+            where: { id },
             data: updateData
         })
 
@@ -96,14 +96,42 @@ router.patch("/sets/:id", async (req, res) => {
         console.error(error);
 
         if (error.code = "P2025") {
-            return res.status(404).json({error: "Session set not found"});
+            return res.status(404).json({ error: "Session set not found" });
         }
 
-        res.status(500).json({error: "Failed to update session set"});
+        res.status(500).json({ error: "Failed to update session set" });
     }
 });
 
-// router.patch("/:id/complete", async (req, res));
+// TODO: MARK SESSION AS COMPLETE
+router.patch("/:id/complete", async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+
+        if (!Number.isInteger(id)) {
+            return res.status(400).json({ error: "Invalid session id" });
+        }
+
+        const updatedSession = await prisma.workoutSession.update({
+            where: { id },
+            data: {
+                completed: true,
+            }
+        })
+
+        res.json(updatedSession);
+
+    } catch (error) {
+        console.error(error);
+
+        if (error.code === "P2025") {
+            return res.status(404).json({ error: "Session not found" });
+        }
+
+        res.status(500).json({ error: "Failed to complete session" });
+    }
+});
+
 
 // router.delete("/:id", async (req, res));
 
