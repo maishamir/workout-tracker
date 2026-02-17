@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  
 }
 
 datasource db {
@@ -23,6 +24,7 @@ enum MuscleGroup {
   TRAPS
   LATS
   LOWER_BACK
+  TOTAL_BODY
 }
 
 enum Equipment {
