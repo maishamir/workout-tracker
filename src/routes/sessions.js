@@ -3,6 +3,7 @@ import { prisma } from "../db/prisma.js";
 
 const router = express.Router();
 
+// TODO: GET ALL SESSIONS
 router.get("/", async (req, res) => {
     try {
         const sessions = await prisma.workoutSession.findMany({
@@ -30,6 +31,8 @@ router.get("/", async (req, res) => {
     }
 });
 
+
+// TODO: GET SPECIFIC SESSION BY ID
 router.get("/:id", async (req, res) => {
     try {
         const id = Number(req.params.id);
@@ -66,7 +69,39 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-// router.patch("/:id", async (req, res));
+
+router.patch("/sets/:id", async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+        
+        if (!Number.isInteger(id)) {
+            return res.status(400).json({error: "Invalid session set id"});
+        }
+
+        const {actualReps, actualWeight} = req.body;
+
+        const updateData = {};
+
+        if (actualReps !== undefined) updateData.actualReps = actualReps;
+        if (actualWeight !== undefined) updateData.actualWeight = actualWeight;
+
+        const updatedSet = await prisma.sessionSet.update({
+            where: {id},
+            data: updateData
+        })
+
+        res.json(updatedSet);
+
+    } catch (error) {
+        console.error(error);
+
+        if (error.code = "P2025") {
+            return res.status(404).json({error: "Session set not found"});
+        }
+
+        res.status(500).json({error: "Failed to update session set"});
+    }
+});
 
 // router.patch("/:id/complete", async (req, res));
 
