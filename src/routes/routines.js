@@ -34,6 +34,13 @@ router.get("/", async (req, res) => {
     try {
         const routines = await prisma.routine.findMany({
             orderBy: { createdAt: "desc" },
+            include: {
+                routineExercises: {
+                    include: {
+                        routineSets: true
+                    }
+                }
+            }
         });
         res.json(routines);
 
@@ -235,7 +242,7 @@ router.post("/:id/sessions", async (req, res) => {
             return res.status(400).json({ error: "Invalid routine id" });
         }
 
-        const { date } = req.body;
+        const date = req.body?.date;
         const sessionDate = date ? new Date(date) : new Date();
 
         const createdSession = await prisma.$transaction(async (tx) => {
