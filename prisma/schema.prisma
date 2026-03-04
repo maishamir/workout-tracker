@@ -115,7 +115,7 @@ model WorkoutSession {
   date                DateTime
   completed           Boolean   @default(false)
 
-  routine        Routine        @relation(fields: [routineId], references: [id], onDelete: Restrict)
+  routine        Routine @relation(fields: [routineId], references: [id], onDelete: Cascade)
   sessionExercises SessionExercise[]
 
   @@index([routineId])

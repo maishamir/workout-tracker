@@ -3,324 +3,309 @@ import { prisma } from "../db/prisma.js";
 
 const router = express.Router();
 
-
 // route to create a routine
 router.post("/", async (req, res) => {
-    try {
-        const { name, tags } = req.body;
+  try {
+    const { name, tags } = req.body;
 
-        if (!name) {
-            return res.status(400).json({ error: "Routine name is required" });
-        }
-
-        const routine = await prisma.routine.create({
-            data: {
-                name,
-                tags: tags ?? [],
-            }
-        });
-
-        res.status(201).json(routine);
+    if (!name) {
+      return res.status(400).json({ error: "Routine name is required" });
     }
 
-    catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Failed to create routine" });
-    }
-})
+    const routine = await prisma.routine.create({
+      data: {
+        name,
+        tags: tags ?? [],
+      },
+    });
+
+    res.status(201).json(routine);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to create routine" });
+  }
+});
 
 // TODO: ROUTE TO GET ALL ROUTINES
 router.get("/", async (req, res) => {
-    try {
-        const routines = await prisma.routine.findMany({
-            orderBy: { createdAt: "desc" },
-        });
-        res.json(routines);
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Failed to fetch routines" })
-    }
-})
+  try {
+    const routines = await prisma.routine.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        routineExercises: {
+          include: {
+            exercise: true,
+            routineSets: true
+          }
+        }
+      }
+    });
+    res.json(routines);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch routines" });
+  }
+});
 
 // TODO: ROUTE TO GET SPECIFIC ROUTINE
 router.get("/:id", async (req, res) => {
-    try {
-        const id = Number(req.params.id);
-        if (!Number.isInteger(id)) {
-            return res.status(400).json({ error: "Invalid routine id" });
-        }
-
-        const routine = await prisma.routine.findUnique({
-            where: { id },
-            include: {
-                routineExercises: {
-                    orderBy: [
-                        { sectionLabel: "asc" },
-                        { orderIndex: "asc" }
-                    ],
-                    include: {
-                        exercise: true,
-                        routineSets: {
-                            orderBy: { orderIndex: "asc" }
-                        }
-                    }
-                }
-            }
-        });
-
-        if (!routine) {
-            return res.status(404).json({ error: "Routine not found" });
-        }
-        res.json(routine);
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Failed to fetch routines" })
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ error: "Invalid routine id" });
     }
-})
+
+    const routine = await prisma.routine.findUnique({
+      where: { id },
+      include: {
+        routineExercises: {
+          orderBy: [{ sectionLabel: "asc" }, { orderIndex: "asc" }],
+          include: {
+            exercise: true,
+            routineSets: {
+              orderBy: { orderIndex: "asc" },
+            },
+          },
+        },
+      },
+    });
+
+    if (!routine) {
+      return res.status(404).json({ error: "Routine not found" });
+    }
+    res.json(routine);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch routines" });
+  }
+});
 // TODO: ROUTE TO EDIT A ROUTINE
 router.patch("/:id", async (req, res) => {
-    try {
-        const id = Number(req.params.id);
+  try {
+    const id = Number(req.params.id);
 
-        if (!Number.isInteger(id)) {
-            return res.status(400).json({ error: "Invalid routine id" });
-        }
-
-        const { name, tags } = req.body;
-
-        const updateData = {};
-
-        if (name !== undefined) updateData.name = name;
-        if (tags !== undefined) updateData.tags = tags;
-
-        const updatedRoutine = await prisma.routine.update({
-            where: { id },
-            data: updateData,
-        });
-
-        res.json(updatedRoutine);
-
-    } catch (error) {
-        console.error(error);
-
-        if (error.code === "P2025") {
-            return res.status(404).json({ error: "Routine not found" });
-        }
-
-        res.status(500).json({ error: "Failed to update routine" });
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ error: "Invalid routine id" });
     }
+
+    const { name, tags } = req.body;
+
+    const updateData = {};
+
+    if (name !== undefined) updateData.name = name;
+    if (tags !== undefined) updateData.tags = tags;
+
+    const updatedRoutine = await prisma.routine.update({
+      where: { id },
+      data: updateData,
+    });
+
+    res.json(updatedRoutine);
+  } catch (error) {
+    console.error(error);
+
+    if (error.code === "P2025") {
+      return res.status(404).json({ error: "Routine not found" });
+    }
+
+    res.status(500).json({ error: "Failed to update routine" });
+  }
 });
 
 // TODO: ROUTE TO DELETE A ROUTINE
 router.delete("/:id", async (req, res) => {
-    try {
-        const id = Number(req.params.id);
+  try {
+    const id = Number(req.params.id);
 
-        if (!Number.isInteger(id)) {
-            return res.status(400).json({ error: "Invalid routine id" });
-        }
-
-        await prisma.routine.delete({
-            where: { id },
-        });
-
-        res.json({ message: "Routine deleted successfully" });
-
-    } catch (error) {
-        console.error(error);
-
-        if (error.code === "P2025") {
-            return res.status(404).json({ error: "Routine not found" });
-        }
-
-        res.status(500).json({ error: "Failed to delete routine" });
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ error: "Invalid routine id" });
     }
-});
 
+    await prisma.routine.delete({
+      where: { id },
+    });
+
+    res.json({ message: "Routine deleted successfully" });
+  } catch (error) {
+    console.error(error);
+
+    if (error.code === "P2025") {
+      return res.status(404).json({ error: "Routine not found" });
+    }
+
+    res.status(500).json({ error: "Failed to delete routine", message: error });
+  }
+});
 
 // TODO: ROUTE TO ADD EXERCISE TO ROUTINE
 router.post("/:id/exercises", async (req, res) => {
-    try {
-        const routineId = Number(req.params.id);
+  try {
+    const routineId = Number(req.params.id);
 
-        if (!Number.isInteger(routineId)) {
-            return res.status(400).json({ error: "Invalid routine id" });
-        }
-
-        const { exerciseId, sectionLabel, orderIndex } = req.body;
-
-        if (!exerciseId || sectionLabel === undefined || orderIndex === undefined) {
-            return res.status(400).json({
-                error: "exerciseId, sectionLabel, and orderIndex are required",
-            });
-        }
-
-        const routineExercise = await prisma.routineExercise.create({
-            data: {
-                routineId,
-                exerciseId,
-                sectionLabel,
-                orderIndex,
-            },
-        });
-
-        res.status(201).json(routineExercise);
-    } catch (error) {
-        console.error(error);
-
-        if (error.code === "P2003") {
-            return res.status(400).json({
-                error: "Invalid routineId or exerciseId",
-            });
-        }
-
-        res.status(500).json({ error: "Failed to add exercise to routine" });
+    if (!Number.isInteger(routineId)) {
+      return res.status(400).json({ error: "Invalid routine id" });
     }
-})
+
+    const { exerciseId, sectionLabel, orderIndex } = req.body;
+
+    if (!exerciseId || sectionLabel === undefined || orderIndex === undefined) {
+      return res.status(400).json({
+        error: "exerciseId, sectionLabel, and orderIndex are required",
+      });
+    }
+
+    const routineExercise = await prisma.routineExercise.create({
+      data: {
+        routineId,
+        exerciseId,
+        sectionLabel,
+        orderIndex,
+      },
+    });
+
+    res.status(201).json(routineExercise);
+  } catch (error) {
+    console.error(error);
+
+    if (error.code === "P2003") {
+      return res.status(400).json({
+        error: "Invalid routineId or exerciseId",
+      });
+    }
+
+    res.status(500).json({ error: "Failed to add exercise to routine" });
+  }
+});
 
 // TODO: SET THE NUMBER OF TARGET REPS PER SET
 router.post("/routine-exercises/:id/sets", async (req, res) => {
-    try {
-        const routineExerciseId = Number(req.params.id);
+  try {
+    const routineExerciseId = Number(req.params.id);
 
-        if (!Number.isInteger(routineExerciseId)) {
-            return res.status(400).json({ error: "Invalid routineExercise id" });
-        }
-
-        const {
-            orderIndex,
-            targetMinReps,
-            targetMaxReps,
-            targetExactReps,
-        } = req.body;
-
-        if (orderIndex === undefined) {
-            return res.status(400).json({
-                error: "orderIndex is required",
-            });
-        }
-
-        const set = await prisma.routineSet.create({
-            data: {
-                routineExerciseId,
-                orderIndex,
-                targetMinReps,
-                targetMaxReps,
-                targetExactReps,
-            },
-        });
-
-        res.status(201).json(set);
-    } catch (error) {
-        console.error(error);
-
-        if (error.code === "P2003") {
-            return res.status(400).json({
-                error: "Invalid routineExerciseId",
-            });
-        }
-
-        res.status(500).json({ error: "Failed to create routine set" });
+    if (!Number.isInteger(routineExerciseId)) {
+      return res.status(400).json({ error: "Invalid routineExercise id" });
     }
+
+    const { orderIndex, targetMinReps, targetMaxReps, targetExactReps } =
+      req.body;
+
+    if (orderIndex === undefined) {
+      return res.status(400).json({
+        error: "orderIndex is required",
+      });
+    }
+
+    const set = await prisma.routineSet.create({
+      data: {
+        routineExerciseId,
+        orderIndex,
+        targetMinReps,
+        targetMaxReps,
+        targetExactReps,
+      },
+    });
+
+    res.status(201).json(set);
+  } catch (error) {
+    console.error(error);
+
+    if (error.code === "P2003") {
+      return res.status(400).json({
+        error: "Invalid routineExerciseId",
+      });
+    }
+
+    res.status(500).json({ error: "Failed to create routine set" });
+  }
 });
 
 // TODO: CREATE WORKOUT SESSION FROM ROUTINE
 router.post("/:id/sessions", async (req, res) => {
-    try {
-        const routineId = Number(req.params.id);
+  try {
+    const routineId = Number(req.params.id);
 
-        if (!Number.isInteger(routineId)) {
-            return res.status(400).json({ error: "Invalid routine id" });
-        }
-
-        const { date } = req.body;
-        const sessionDate = date ? new Date(date) : new Date();
-
-        const createdSession = await prisma.$transaction(async (tx) => {
-            // fetch routine with full nested structure
-            const routine = await tx.routine.findUnique({
-                where: { id: routineId },
-                include: {
-                    routineExercises: {
-                        orderBy: [
-                            { sectionLabel: "asc" },
-                            { orderIndex: "asc" }
-                        ],
-                        include: {
-                            routineSets: {
-                                orderBy: { orderIndex: "asc" }
-                            }
-                        }
-                    }
-                }
-            })
-
-            if (!routine) {
-                return res.status(404).json({ error: "Routine not found" });
-            }
-
-            // transform routineExercies to sessionExercises (copy)
-            const sessionExercisesData = routine.routineExercises.map((re) => ({
-                exerciseId: re.exerciseId,
-                sectionLabel: re.sectionLabel,
-                orderIndex: re.orderIndex,
-                sessionSets: {
-                    create: re.routineSets.map((rs) => ({
-                        orderIndex: rs.orderIndex,
-                        targetMinReps: rs.targetMinReps,
-                        targetMaxReps: rs.targetMaxReps,
-                        targetExactReps: rs.targetExactReps,
-                        actualReps: null,
-                        actualWeight: null,
-                    }))
-                }
-            }));
-
-            // TODO: create workoutsession + nested children in one atomic write
-            // atomic -> either it happens in one go or not at all
-            const session = await tx.workoutSession.create({
-                data: {
-                    routineId: routine.id,
-                    routineNameSnapshot: routine.name,
-                    date: sessionDate,
-                    completed: false,
-                    sessionExercises: {
-                        create: sessionExercisesData
-                    }
-                },
-                include: {
-                    sessionExercises: {
-                        orderBy: [
-                            { sectionLabel: "asc" },
-                            { orderIndex: "asc" }
-                        ],
-                        include: {
-                            exercise: true,
-                            sessionSets: {
-                                orderBy: { orderIndex: "asc" }
-                            }
-                        }
-                    }
-                }
-            })
-
-            return session;
-        })
-
-        res.status(201).json(createdSession);
-
-    } catch (error) {
-        console.error(error);
-
-        if (error.status === 404) {
-            return res.status(404).json({ error: "Routine not found" });
-        }
-
-        res.status(500).json({ error: "Failed to create workout session" });
+    if (!Number.isInteger(routineId)) {
+      return res.status(400).json({ error: "Invalid routine id" });
     }
-})
 
+    const { date } = req.body ?? {};
+    const sessionDate = date ? new Date(date) : new Date();
+
+    const createdSession = await prisma.$transaction(async (tx) => {
+      // fetch routine with full nested structure
+      const routine = await tx.routine.findUnique({
+        where: { id: routineId },
+        include: {
+          routineExercises: {
+            orderBy: [{ sectionLabel: "asc" }, { orderIndex: "asc" }],
+            include: {
+              routineSets: {
+                orderBy: { orderIndex: "asc" },
+              },
+            },
+          },
+        },
+      });
+
+      if (!routine) {
+        return res.status(404).json({ error: "Routine not found" });
+      }
+
+      // transform routineExercies to sessionExercises (copy)
+      const sessionExercisesData = routine.routineExercises.map((re) => ({
+        exerciseId: re.exerciseId,
+        sectionLabel: re.sectionLabel,
+        orderIndex: re.orderIndex,
+        sessionSets: {
+          create: re.routineSets.map((rs) => ({
+            orderIndex: rs.orderIndex,
+            targetMinReps: rs.targetMinReps,
+            targetMaxReps: rs.targetMaxReps,
+            targetExactReps: rs.targetExactReps,
+            actualReps: null,
+            actualWeight: null,
+          })),
+        },
+      }));
+
+      // TODO: create workoutsession + nested children in one atomic write
+      // atomic -> either it happens in one go or not at all
+      const session = await tx.workoutSession.create({
+        data: {
+          routineId: routine.id,
+          routineNameSnapshot: routine.name,
+          date: sessionDate,
+          completed: false,
+          sessionExercises: {
+            create: sessionExercisesData,
+          },
+        },
+        include: {
+          sessionExercises: {
+            orderBy: [{ sectionLabel: "asc" }, { orderIndex: "asc" }],
+            include: {
+              exercise: true,
+              sessionSets: {
+                orderBy: { orderIndex: "asc" },
+              },
+            },
+          },
+        },
+      });
+
+      return session;
+    });
+
+    res.status(201).json(createdSession);
+  } catch (error) {
+    console.error(error);
+
+    if (error.status === 404) {
+      return res.status(404).json({ error: "Routine not found" });
+    }
+
+    res.status(500).json({ error: "Failed to create workout session" });
+  }
+});
 
 export default router;
