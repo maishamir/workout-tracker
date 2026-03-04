@@ -47,6 +47,26 @@ router.get("/", async (req, res) => {
   }
 });
 
+    try {
+        const routines = await prisma.routine.findMany({
+            orderBy: { createdAt: "desc" },
+            include: {
+                routineExercises: {
+                    include: {
+                        routineSets: true
+                    }
+                }
+            }
+        });
+        res.json(routines);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Failed to fetch routines" })
+    }
+})
+
+
 // TODO: ROUTE TO GET SPECIFIC ROUTINE
 router.get("/:id", async (req, res) => {
   try {
@@ -224,8 +244,99 @@ router.post("/:id/sessions", async (req, res) => {
   try {
     const routineId = Number(req.params.id);
 
+
     if (!Number.isInteger(routineId)) {
       return res.status(400).json({ error: "Invalid routine id" });
+
+        if (!Number.isInteger(routineId)) {
+            return res.status(400).json({ error: "Invalid routine id" });
+        }
+
+        const date = req.body?.date;
+        const sessionDate = date ? new Date(date) : new Date();
+
+        const createdSession = await prisma.$transaction(async (tx) => {
+            // fetch routine with full nested structure
+            const routine = await tx.routine.findUnique({
+                where: { id: routineId },
+                include: {
+                    routineExercises: {
+                        orderBy: [
+                            { sectionLabel: "asc" },
+                            { orderIndex: "asc" }
+                        ],
+                        include: {
+                            routineSets: {
+                                orderBy: { orderIndex: "asc" }
+                            }
+                        }
+                    }
+                }
+            })
+
+            if (!routine) {
+                return res.status(404).json({ error: "Routine not found" });
+            }
+
+            // transform routineExercies to sessionExercises (copy)
+            const sessionExercisesData = routine.routineExercises.map((re) => ({
+                exerciseId: re.exerciseId,
+                sectionLabel: re.sectionLabel,
+                orderIndex: re.orderIndex,
+                sessionSets: {
+                    create: re.routineSets.map((rs) => ({
+                        orderIndex: rs.orderIndex,
+                        targetMinReps: rs.targetMinReps,
+                        targetMaxReps: rs.targetMaxReps,
+                        targetExactReps: rs.targetExactReps,
+                        actualReps: null,
+                        actualWeight: null,
+                    }))
+                }
+            }));
+
+            // TODO: create workoutsession + nested children in one atomic write
+            // atomic -> either it happens in one go or not at all
+            const session = await tx.workoutSession.create({
+                data: {
+                    routineId: routine.id,
+                    routineNameSnapshot: routine.name,
+                    date: sessionDate,
+                    completed: false,
+                    sessionExercises: {
+                        create: sessionExercisesData
+                    }
+                },
+                include: {
+                    sessionExercises: {
+                        orderBy: [
+                            { sectionLabel: "asc" },
+                            { orderIndex: "asc" }
+                        ],
+                        include: {
+                            exercise: true,
+                            sessionSets: {
+                                orderBy: { orderIndex: "asc" }
+                            }
+                        }
+                    }
+                }
+            })
+
+            return session;
+        })
+
+        res.status(201).json(createdSession);
+
+    } catch (error) {
+        console.error(error);
+
+        if (error.status === 404) {
+            return res.status(404).json({ error: "Routine not found" });
+        }
+
+        res.status(500).json({ error: "Failed to create workout session" });
+>>>>>>> 895f1cd3717522d8f85dd2ab67a1e1b51e9229ac
     }
 
     const { date } = req.body ?? {};
