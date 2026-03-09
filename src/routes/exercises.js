@@ -63,7 +63,6 @@ router.post("/", async (req, res) => {
     }
 })
 
-
 // route to get specific exercise
 router.get("/:id", async (req, res) => {
     try {

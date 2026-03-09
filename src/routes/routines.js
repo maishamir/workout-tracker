@@ -6,7 +6,7 @@ const router = express.Router();
 // route to create a routine
 router.post("/", async (req, res) => {
   try {
-    const { name, tags } = req.body;
+    const { name, tags, routineExercises } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: "Routine name is required" });
@@ -16,6 +16,9 @@ router.post("/", async (req, res) => {
       data: {
         name,
         tags: tags ?? [],
+        routineExercises: {
+          create: routineExercises,
+        },
       },
     });
 
@@ -26,7 +29,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-// TODO: ROUTE TO GET ALL ROUTINES
+// ROUTE TO GET ALL ROUTINES
 router.get("/", async (req, res) => {
   try {
     const routines = await prisma.routine.findMany({
@@ -35,10 +38,10 @@ router.get("/", async (req, res) => {
         routineExercises: {
           include: {
             exercise: true,
-            routineSets: true
-          }
-        }
-      }
+            routineSets: true,
+          },
+        },
+      },
     });
     res.json(routines);
   } catch (error) {
@@ -47,9 +50,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-
-
-// TODO: ROUTE TO GET SPECIFIC ROUTINE
+// ROUTE TO GET SPECIFIC ROUTINE
 router.get("/:id", async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -81,7 +82,7 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch routines" });
   }
 });
-// TODO: ROUTE TO EDIT A ROUTINE
+// ROUTE TO EDIT A ROUTINE
 router.patch("/:id", async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -114,7 +115,7 @@ router.patch("/:id", async (req, res) => {
   }
 });
 
-// TODO: ROUTE TO DELETE A ROUTINE
+// ROUTE TO DELETE A ROUTINE
 router.delete("/:id", async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -139,7 +140,7 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-// TODO: ROUTE TO ADD EXERCISE TO ROUTINE
+// ROUTE TO ADD EXERCISE TO ROUTINE
 router.post("/:id/exercises", async (req, res) => {
   try {
     const routineId = Number(req.params.id);
@@ -179,7 +180,7 @@ router.post("/:id/exercises", async (req, res) => {
   }
 });
 
-// TODO: SET THE NUMBER OF TARGET REPS PER SET
+// SET THE NUMBER OF TARGET REPS PER SET
 router.post("/routine-exercises/:id/sets", async (req, res) => {
   try {
     const routineExerciseId = Number(req.params.id);
@@ -221,11 +222,10 @@ router.post("/routine-exercises/:id/sets", async (req, res) => {
   }
 });
 
-// TODO: CREATE WORKOUT SESSION FROM ROUTINE
+// CREATE WORKOUT SESSION FROM ROUTINE
 router.post("/:id/sessions", async (req, res) => {
   try {
     const routineId = Number(req.params.id);
-
 
     if (!Number.isInteger(routineId)) {
       return res.status(400).json({ error: "Invalid routine id" });
@@ -271,7 +271,7 @@ router.post("/:id/sessions", async (req, res) => {
         },
       }));
 
-      // TODO: create workoutsession + nested children in one atomic write
+      // create workoutsession + nested children in one atomic write
       // atomic -> either it happens in one go or not at all
       const session = await tx.workoutSession.create({
         data: {
@@ -308,6 +308,34 @@ router.post("/:id/sessions", async (req, res) => {
     }
 
     res.status(500).json({ error: "Failed to create workout session" });
+  }
+});
+
+// ROUTE TO DELETE EXERCISE FROM ROUTINE
+router.delete("/:id/exercises/:routineExerciseId/", async (req, res) => {
+  try {
+    const routineId = Number(req.params.id);
+    const exerciseId = Number(req.params.exerciseId);
+
+    if (!Number.isInteger(routineId) || !Number.isInteger(exerciseId)) {
+      return res.status(400).json({ error: "Invalid id" });
+    }
+
+    await prisma.routineExercise.delete({
+      where: {
+        id: routineExerciseId,
+      },
+    });
+
+    res.json({ message: "Exercise removed from routine successfully" });
+  } catch (error) {
+    console.error(error);
+
+    if (error.code === "P2025") {
+      return res.status(404).json({ error: "Exercise not found in routine" });
+    }
+
+    res.status(500).json({ error: "Failed to remove exercise from routine" });
   }
 });
 
