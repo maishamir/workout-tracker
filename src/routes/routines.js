@@ -5,8 +5,10 @@ const router = express.Router();
 
 // route to create a routine
 router.post("/", async (req, res) => {
+  console.log(req.body);
+
   try {
-    const { name, tags } = req.body;
+    const { name, tags, routineExercises } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: "Routine name is required" });
@@ -16,6 +18,9 @@ router.post("/", async (req, res) => {
       data: {
         name,
         tags: tags ?? [],
+        routineExercises: {
+          create: routineExercises
+        }
       },
     });
 
