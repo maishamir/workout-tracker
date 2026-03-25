@@ -91,18 +91,27 @@ router.patch("/:id", async (req, res) => {
       return res.status(400).json({ error: "Invalid routine id" });
     }
 
-    const { name, tags } = req.body;
+    const { name, tags, routineExercises } = req.body;
+    // console.log(name)
+    
+    const updatedRoutine = await prisma.$transaction(async (tx) => {
+        // step 1: delete all existing exercises (cascades to routineSets)
+        await tx.routineExercise.deleteMany( {
+            where: {routineId: id},
+        });
 
-    const updateData = {};
-
-    if (name !== undefined) updateData.name = name;
-    if (tags !== undefined) updateData.tags = tags;
-
-    const updatedRoutine = await prisma.routine.update({
-      where: { id },
-      data: updateData,
-    });
-
+        // step 2: update the routine exericses
+        return await tx.routine.update({
+            where: {id},
+            data: {
+                name,
+                tags: tags ?? [],
+                routineExercises: {
+                    create: routineExercises
+                }
+            }
+        })
+    })
     res.json(updatedRoutine);
   } catch (error) {
     console.error(error);
@@ -231,8 +240,9 @@ router.post("/:id/sessions", async (req, res) => {
       return res.status(400).json({ error: "Invalid routine id" });
     }
 
-    const { date } = req.body ?? {};
+    const { date, scheduledDate } = req.body ?? {};
     const sessionDate = date ? new Date(date) : new Date();
+    const sessionScheduledDate = scheduledDate ? new Date(scheduledDate) : null;
 
     const createdSession = await prisma.$transaction(async (tx) => {
       // fetch routine with full nested structure
@@ -278,6 +288,7 @@ router.post("/:id/sessions", async (req, res) => {
           routineId: routine.id,
           routineNameSnapshot: routine.name,
           date: sessionDate,
+          scheduledDate: sessionScheduledDate,
           completed: false,
           sessionExercises: {
             create: sessionExercisesData,

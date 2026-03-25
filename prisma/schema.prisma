@@ -113,6 +113,7 @@ model WorkoutSession {
   routineId           Int
   routineNameSnapshot String
   date                DateTime
+  scheduledDate       DateTime?
   completed           Boolean   @default(false)
 
   routine        Routine @relation(fields: [routineId], references: [id], onDelete: Cascade)
