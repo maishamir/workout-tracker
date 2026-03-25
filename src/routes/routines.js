@@ -5,6 +5,8 @@ const router = express.Router();
 
 // route to create a routine
 router.post("/", async (req, res) => {
+  console.log(req.body);
+
   try {
     const { name, tags, routineExercises } = req.body;
 
