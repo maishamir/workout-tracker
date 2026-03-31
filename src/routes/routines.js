@@ -95,25 +95,25 @@ router.patch("/:id", async (req, res) => {
 
     const { name, tags, routineExercises } = req.body;
     // console.log(name)
-    
-    const updatedRoutine = await prisma.$transaction(async (tx) => {
-        // step 1: delete all existing exercises (cascades to routineSets)
-        await tx.routineExercise.deleteMany( {
-            where: {routineId: id},
-        });
 
-        // step 2: update the routine exericses
-        return await tx.routine.update({
-            where: {id},
-            data: {
-                name,
-                tags: tags ?? [],
-                routineExercises: {
-                    create: routineExercises
-                }
-            }
-        })
-    })
+    const updatedRoutine = await prisma.$transaction(async (tx) => {
+      // step 1: delete all existing exercises (cascades to routineSets)
+      await tx.routineExercise.deleteMany({
+        where: { routineId: id },
+      });
+
+      // step 2: update the routine exericses
+      return await tx.routine.update({
+        where: { id },
+        data: {
+          name,
+          tags: tags ?? [],
+          routineExercises: {
+            create: routineExercises,
+          },
+        },
+      });
+    });
     res.json(updatedRoutine);
   } catch (error) {
     console.error(error);
@@ -245,6 +245,8 @@ router.post("/:id/sessions", async (req, res) => {
     const { date, scheduledDate } = req.body ?? {};
     const sessionDate = date ? new Date(date) : new Date();
     const sessionScheduledDate = scheduledDate ? new Date(scheduledDate) : null;
+    console.log(sessionDate, sessionScheduledDate);
+    
 
     const createdSession = await prisma.$transaction(async (tx) => {
       // fetch routine with full nested structure
