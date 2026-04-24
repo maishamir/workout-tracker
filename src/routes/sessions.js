@@ -47,6 +47,53 @@ router.get("/scheduled", async (req, res) => {
   }
 });
 
+router.get("/today", async (req, res) => {
+  try {
+    const today = new Date();
+
+    const startOfDay = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
+    const endOfDay = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate() + 1,
+    );
+
+    const sessions = await prisma.workoutSession.findMany({
+      where: {
+        scheduledDate: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+
+      select: {
+        id: true,
+        scheduledDate: true,
+        completed: true,
+        routineNameSnapshot: true,
+        sessionExercises: {
+          orderBy: [{ sectionLabel: "asc" }, { orderIndex: "asc" }],
+          include: {
+            exercise: true,
+            sessionSets: {
+              orderBy: { orderIndex: "asc" },
+            },
+          },
+        },
+      },
+    });
+
+    res.json(sessions);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch today's sessions" });
+  }
+});
+
 // TODO: GET SPECIFIC SESSION BY ID
 router.get("/:id", async (req, res) => {
   try {
