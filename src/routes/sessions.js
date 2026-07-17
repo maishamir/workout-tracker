@@ -28,6 +28,44 @@ router.get("/", async (req, res) => {
   }
 });
 
+
+// calculate streak
+router.get("/streak", async (req, res) => {
+  try {
+    const sessions = await prisma.workoutSession.findMany({
+      where: { scheduledDate: { not: null }, completed: true },
+      select: {
+        scheduledDate: true,
+      },
+      orderBy: { scheduledDate: "desc" },
+    });
+
+    if (sessions.length === 0) return res.json({ streak: 0 });
+
+    let streak = 0;
+    let currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i < sessions.length; i++) {
+      let sessionDate = new Date(sessions[i].scheduledDate);
+      sessionDate.setHours(0, 0, 0, 0);
+
+      let daysDiff = (currentDate - sessionDate) / (1000 * 60 * 60 * 24);
+
+      if (daysDiff === i) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+
+    res.json({ streak })
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch scheduled sessions" });
+  }
+});
+
 router.get("/scheduled", async (req, res) => {
   try {
     const sessions = await prisma.workoutSession.findMany({

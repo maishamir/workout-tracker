@@ -8,7 +8,7 @@ router.post("/", async (req, res) => {
   console.log(req.body);
 
   try {
-    const { name, tags, routineExercises } = req.body;
+    const { userId, name, tags, routineExercises } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: "Routine name is required" });
@@ -16,6 +16,7 @@ router.post("/", async (req, res) => {
 
     const routine = await prisma.routine.create({
       data: {
+        userId,
         name,
         tags: tags ?? [],
         routineExercises: {
@@ -246,7 +247,7 @@ router.post("/:id/sessions", async (req, res) => {
     const sessionDate = date ? new Date(date) : new Date();
     const sessionScheduledDate = scheduledDate ? new Date(scheduledDate) : null;
     console.log(sessionDate, sessionScheduledDate);
-    
+
 
     const createdSession = await prisma.$transaction(async (tx) => {
       // fetch routine with full nested structure
