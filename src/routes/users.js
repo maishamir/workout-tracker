@@ -110,6 +110,8 @@ router.get("/sessions", async (req, res) => {
         res.status(500).json({ error: "Failed to fetch user's workout sessions" });
     }
 
-})
+});
 // TODO: PUT /sessions/:id - mark session complete
 // TODO: DELETE /sessions/:id - remove session
+
+export default router;

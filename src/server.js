@@ -75,6 +75,7 @@ import cors from "cors";
 import exerciseRouter from "./routes/exercises.js";
 import routinesRouter from "./routes/routines.js";
 import sessionsRouter from "./routes/sessions.js";
+import usersRouter from "./routes/users.js";
 
 const app = express();
 
@@ -88,6 +89,7 @@ app.use(express.json());
 app.use("/exercises", exerciseRouter);
 app.use("/routines", routinesRouter);
 app.use("/sessions", sessionsRouter);
+app.use("/users", usersRouter);
 
 app.listen(3000, () => {
   console.log("Server running on port 3000");

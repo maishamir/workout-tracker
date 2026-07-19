@@ -33,25 +33,36 @@ router.post("/", async (req, res) => {
 });
 
 // ROUTE TO GET ALL ROUTINES
-router.get("/", async (req, res) => {
+router.get('/', async (req, res) => {
+  console.log(req.body)
   try {
-    const routines = await prisma.routine.findMany({
-      orderBy: { createdAt: "desc" },
+    const { userId } = req.query;
+    if (!userId) {
+      return res.status(400).json({ error: "userId is required" });
+    }
+
+    const userRoutines = await prisma.routine.findMany({
+      orderBy: { name: "asc" },
+      where: {
+        userId: userId
+      },
       include: {
         routineExercises: {
           include: {
             exercise: true,
-            routineSets: true,
-          },
-        },
-      },
-    });
-    res.json(routines);
+            routineSets: true
+          }
+        }
+      }
+    })
+    res.json(userRoutines)
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to fetch routines" });
+    res.status(500).json({ error: "Failed to fetch user's routines" })
   }
-});
+
+
+})
 
 // ROUTE TO GET SPECIFIC ROUTINE
 router.get("/:id", async (req, res) => {
