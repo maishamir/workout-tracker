@@ -14,6 +14,32 @@ export const prisma = new PrismaClient({
 });
 
 
+// make call to exerciseDB
+async function getExercises() {
+    const url = "https://oss.exercisedb.dev/api/v1/exercises";
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Response status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        let exercises = result.data.map(exercise => {
+            return {
+               name: exercise.name,
+               primaryMuscleGroup: exercise.targetMuscles[0]?.toUpperCase(),
+               equipment: exercise.equipments[0]?.toUpperCase() || 'BODYWEIGHT',
+               type: 'STRENGTH',
+               isCustom: false,
+               isActive: true
+            }
+        })
+        return exercises;
+    } catch (error) {
+        console.error(error);
+    }
+    
+}
 
 
 const exercises = [
@@ -68,6 +94,9 @@ const exercises = [
 ];
 
 async function main() {
+    const exercises = await getExercises();
+    console.log(exercises);
+    
     for (const ex of exercises) {
         await prisma.exercise.upsert({
             where: { name: ex.name }, // name must be UNIQUE in your schema

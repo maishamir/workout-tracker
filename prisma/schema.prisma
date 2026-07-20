@@ -8,38 +8,6 @@ datasource db {
 }
 
 
-// enums 
-
-enum MuscleGroup {
-    CHEST
-  BACK
-  SHOULDERS
-  BICEPS
-  TRICEPS
-  QUADS
-  HAMSTRINGS
-  GLUTES
-  CALVES
-  CORE
-  TRAPS
-  LATS
-  LOWER_BACK
-  TOTAL_BODY
-}
-
-enum Equipment {
-    DUMBBELL
-  BARBELL
-  MACHINE
-  CABLE
-  BODYWEIGHT
-  KETTLEBELL
-  RESISTANCE_BAND
-  TREADMILL
-  ELLIPTICAL
-  STAIRMASTER
-  ROWER
-}
 
 enum ExerciseType {
     STRENGTH
@@ -50,8 +18,8 @@ enum ExerciseType {
 model Exercise {
   id                 Int          @id @default(autoincrement())
   name               String       @unique
-  primaryMuscleGroup MuscleGroup
-  equipment          Equipment
+  primaryMuscleGroup String
+  equipment          String
   type               ExerciseType
   isCustom           Boolean      @default(false)
   isActive           Boolean      @default(true)
