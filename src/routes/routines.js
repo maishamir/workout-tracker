@@ -5,7 +5,6 @@ const router = express.Router();
 
 // route to create a routine
 router.post("/", async (req, res) => {
-  console.log(req.body);
 
   try {
     const { userId, name, tags, routineExercises } = req.body;
@@ -34,7 +33,6 @@ router.post("/", async (req, res) => {
 
 // ROUTE TO GET ALL ROUTINES
 router.get('/', async (req, res) => {
-  console.log(req.body)
   try {
     const { userId } = req.query;
     if (!userId) {
@@ -106,7 +104,6 @@ router.patch("/:id", async (req, res) => {
     }
 
     const { name, tags, routineExercises } = req.body;
-    // console.log(name)
 
     const updatedRoutine = await prisma.$transaction(async (tx) => {
       // step 1: delete all existing exercises (cascades to routineSets)
@@ -254,10 +251,10 @@ router.post("/:id/sessions", async (req, res) => {
       return res.status(400).json({ error: "Invalid routine id" });
     }
 
-    const { date, scheduledDate } = req.body ?? {};
+    const { date, scheduledDate, userId } = req.body ?? {};
+    
     const sessionDate = date ? new Date(date) : new Date();
     const sessionScheduledDate = scheduledDate ? new Date(scheduledDate) : null;
-    console.log(sessionDate, sessionScheduledDate);
 
 
     const createdSession = await prisma.$transaction(async (tx) => {
@@ -301,6 +298,7 @@ router.post("/:id/sessions", async (req, res) => {
       // atomic -> either it happens in one go or not at all
       const session = await tx.workoutSession.create({
         data: {
+          userId: userId,
           routineId: routine.id,
           routineNameSnapshot: routine.name,
           date: sessionDate,

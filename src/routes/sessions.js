@@ -88,6 +88,10 @@ router.get("/scheduled", async (req, res) => {
 router.get("/today", async (req, res) => {
   try {
     const today = new Date();
+    const {userId} = req.query;
+    if (!userId) {
+      return res.status(400).json({error: "userId is required"})
+    }
 
     const startOfDay = new Date(
       today.getFullYear(),
@@ -102,6 +106,7 @@ router.get("/today", async (req, res) => {
 
     const sessions = await prisma.workoutSession.findMany({
       where: {
+        userId: userId,
         scheduledDate: {
           gte: startOfDay,
           lte: endOfDay,

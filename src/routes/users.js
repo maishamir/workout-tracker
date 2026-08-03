@@ -6,7 +6,6 @@ const router = express.Router();
 // users.js
 // TODO: POST /users - sync user from Clerk (create if not exists)
 router.post('/', async (req, res) => {
-    console.log(req.body);
 
     try {
         const { id, email, firstName, lastName, birthday } = req.body;
@@ -46,7 +45,6 @@ router.post('/', async (req, res) => {
 // routines.js
 // TODO: GET /routines - get ALL routines for the signed-in user
 router.get('/routines', async (req, res) => {
-    console.log(req.body)
     try {
         const { userId } = req.query;
         if (!userId) {
@@ -81,7 +79,6 @@ router.get('/routines', async (req, res) => {
 // workoutSessions.js (or sessions.js)
 // TODO: GET /sessions - get all sessions for the signed-in user (filtered by userId)
 router.get("/sessions", async (req, res) => {
-    console.log(req.body);
 
     try {
         const { userId } = req.query;

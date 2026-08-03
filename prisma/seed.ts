@@ -15,30 +15,47 @@ export const prisma = new PrismaClient({
 
 
 // make call to exerciseDB
-async function getExercises() {
-    const url = "https://oss.exercisedb.dev/api/v1/exercises";
-    try {
+async function fetchAllExercises() {
+    const baseURL = "https://oss.exercisedb.dev/api/v1/exercises";
+    let after = null;
+    let allExercises = [];
+    let hasNextPage = true;
+
+    while (hasNextPage) {
+        const url = after ? `${baseURL}?after=${after}` : baseURL;
+
+        // await new Promise(resolve => setTimeout(resolve, 500));
+
         const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`Response status: ${response.status}`);
+
+        if (response.status === 429) {
+            const retryAfter = Number(response.headers.get("retry-after"));
+
+            await new Promise(resolve => {
+                setTimeout(resolve, retryAfter * 1000)
+            })
+
+            continue;
         }
 
-        const result = await response.json();
-        let exercises = result.data.map(exercise => {
-            return {
-               name: exercise.name,
-               primaryMuscleGroup: exercise.targetMuscles[0]?.toUpperCase(),
-               equipment: exercise.equipments[0]?.toUpperCase() || 'BODYWEIGHT',
-               type: 'STRENGTH',
-               isCustom: false,
-               isActive: true
-            }
-        })
-        return exercises;
-    } catch (error) {
-        console.error(error);
+        if (!response.ok) {
+            console.log(response.headers);
+
+            throw new Error(`API ERROR: ${response.headers}`)
+        }
+
+        const body = await response.json();
+        console.log(body);
+
+        allExercises = allExercises.concat(body.data);
+        hasNextPage = body.meta.hasNextPage;
+        after = body.meta.nextCursor ?? null;
+
     }
-    
+
+    return allExercises;
+
+
 }
 
 
@@ -94,10 +111,22 @@ const exercises = [
 ];
 
 async function main() {
-    const exercises = await getExercises();
-    console.log(exercises);
-    
-    for (const ex of exercises) {
+    const fetchedExercises = await fetchAllExercises();
+
+
+    let transformedExercises = fetchedExercises.map(ex => {
+        return {
+            name: ex.name,
+            primaryMuscleGroup: ex.targetMuscles[0]?.toUpperCase(),
+            equipment: ex.equipments[0]?.toUpperCase(),
+            type: 'STRENGTH' as const,
+            isCustom: false,
+            isActive: true
+        }
+    })
+
+
+    for (const ex of transformedExercises) {
         await prisma.exercise.upsert({
             where: { name: ex.name }, // name must be UNIQUE in your schema
             update: {
@@ -111,8 +140,7 @@ async function main() {
         });
     }
 
-    const count = await prisma.exercise.count();
-    console.log(`✅ Seed complete. Exercise count: ${count}`);
+
 }
 
 main()
